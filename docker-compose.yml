@@ -31,6 +31,7 @@ services:
     networks:
       - test-network
     volumes:
+      - ./data/site:/data/letsencrypt
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
       - certbot-log:/var/log/letsencrypt
