@@ -21,11 +21,7 @@ services:
     networks:
       - test-network
     depends_on:
-      - api
-      - partner
-      - customer
       - landing
-      - admin
     ports:
       - "80:80"
       - "443:443"
