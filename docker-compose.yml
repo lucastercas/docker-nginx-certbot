@@ -1,0 +1,44 @@
+version: '3'
+
+services:
+
+  landing:
+    container_name: landing
+    # image: landing
+    build:
+      context: ./landing
+      dockerfile: Dockerfile
+    networks:
+      - test-network
+
+  nginx:
+    container_name: nginx
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - test-network
+    volumes:
+      - ./data/site:/usr/share/nginx/html
+      - ./data/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+
+  certbot:
+    container_name: certbot
+    image: certbot/certbot
+    networks:
+      - test-network
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - certbot-log:/var/log/letsencrypt
+    command: "certonly --webroot --register-unsafely-without-email --agree-tos --webroot-path=/data/letsencrypt --staging -d lucastercas.dns-cloud.net"
+
+networks:
+  test-network:
+    driver: bridge
+
+volumes:
+  certbot-etc:
+  certbot-var:
+  certbot-log:
