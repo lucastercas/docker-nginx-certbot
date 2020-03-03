@@ -4,45 +4,58 @@ services:
 
   landing:
     container_name: landing
-    # image: landing
     build:
       context: ./landing
       dockerfile: Dockerfile
     networks:
       - test-network
+    environment:
+      VIRTUAL_PORT: 80
+      VIRTUAL_HOST: lucastercas.dns-cloud.net
+      LETSENCRYPT_HOST: lucastercas.dns-cloud.net
+      LETSENCRYPT_EMAIL: lucasmtercas@gmail.com
 
-  nginx:
-    container_name: nginx
-    image: nginx:alpine
+  proxy:
+    image: jwilder/nginx-proxy
+    container_name: sairmais_proxy
+    networks:
+      - test-network
     depends_on:
+      - api
+      - partner
+      - customer
       - landing
+      - admin
     ports:
       - "80:80"
       - "443:443"
-    networks:
-      - test-network
     volumes:
-      - nginx-root:/usr/share/nginx/html
-      - ./data/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - nginx-certs:/etc/nginx/certs
+      - nginx-vhosts:/etc/nginx/vhost.d
+      - nginx-html:/usr/share/nginx/html
 
-  certbot:
-    container_name: certbot
-    image: certbot/certbot
+  certs:
+    image: jrcs/letsencrypt-nginx-proxy-companion
     networks:
       - test-network
+    container_name: sairmais_certs
+    depends_on:
+      - proxy
     volumes:
-      - nginx-root:/data/letsencrypt
-      - certbot-etc:/etc/letsencrypt
-      - certbot-var:/var/lib/letsencrypt
-      - certbot-log:/var/log/letsencrypt
-    command: "certonly --webroot --register-unsafely-without-email --agree-tos --webroot-path=/data/letsencrypt --staging -d lucastercas.dns-cloud.net"
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - nginx-certs:/etc/nginx/certs
+      - nginx-vhosts:/etc/nginx/vhost.d
+      - nginx-html:/usr/share/nginx/html
+    environment:
+      DEFAULT_EMAIL: lucasmtercas@gmail.com
+      NGINX_PROXY_CONTAINER: sairmais_proxy
 
 networks:
   test-network:
     driver: bridge
 
 volumes:
-  certbot-etc:
-  certbot-var:
-  certbot-log:
-  nginx-root:
+  nginx-certs:
+  nginx-vhosts:
+  nginx-html:
